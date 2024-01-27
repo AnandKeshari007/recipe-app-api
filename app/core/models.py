@@ -8,10 +8,19 @@ from django.contrib.auth.models import (
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extraFields):
-        user = self.model(email=email, **extraFields)
+        if not email:
+            raise ValueError("User must have an email address.")
+        user = self.model(email=self.normalize_email(email), **extraFields)
         user.set_password(password)
-        user.save(using=self._db)   # self._db is used here. In case we use multiple databases
+        user.save(using=self._db)  # self._db is used here. In case we use multiple databases
 
+        return user
+
+    def create_superuser(self, email, password):
+        user = self.create_user(email, password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.save(using=self._db)
         return user
 
 
@@ -24,4 +33,3 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-
